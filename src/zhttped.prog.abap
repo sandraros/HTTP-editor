@@ -317,7 +317,7 @@ CLASS lcl_app IMPLEMENTATION.
             DATA(result) = load_file( file_path = <ls_file>-filename ).
             DATA(postman_collection) = VALUE ty_postman( ).
             TRY.
-                CALL TRANSFORMATION zpostman_collection SOURCE XML result RESULT root = postman_collection.
+                CALL TRANSFORMATION zhttped_postman_collection SOURCE XML result RESULT root = postman_collection.
               CATCH cx_root INTO DATA(lx).
                 RAISE EXCEPTION TYPE lcx_app EXPORTING text = 'transfo' previous = lx.
             ENDTRY.
@@ -354,7 +354,7 @@ CLASS lcl_app IMPLEMENTATION.
         IF l_action = cl_gui_frontend_services=>action_ok.
           TRY.
               CLEAR postman_collection.
-              CALL TRANSFORMATION zpostman_collection SOURCE root = postman_collection RESULT XML DATA(xstring).
+              CALL TRANSFORMATION zhttped_postman_collection SOURCE root = postman_collection RESULT XML DATA(xstring).
             CATCH cx_root INTO lx.
               RAISE EXCEPTION TYPE lcx_app EXPORTING text = 'transfo' previous = lx.
           ENDTRY.

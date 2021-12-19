@@ -1,0 +1,53 @@
+<?sap.transform simple?>
+<tt:transform xmlns:tt="http://www.sap.com/transformation-templates">
+
+  <tt:root name="ROOT"/>
+
+
+  <tt:template>
+
+    <object tt:extensible="deep-dynamic" tt:ref="ROOT">
+
+      <tt:cond>
+        <object name="info">
+          <tt:skip/>
+        </object>
+      </tt:cond>
+
+      <array name="item">
+        <tt:loop ref="ITEMS">
+          <object>
+            <str name="name" tt:value-ref="NAME"/>
+
+            <object name="request">
+              <str name="method" tt:value-ref="REQUEST.METHOD"/>
+              <array name="header">
+                <tt:loop ref="REQUEST.HEADER_FIELDS">
+                  <object>
+                    <str name="key" tt:value-ref="KEY"/>
+                    <str name="value" tt:value-ref="VALUE"/>
+                  </object>
+                </tt:loop>
+              </array>
+              <tt:cond>
+                <object name="body">
+                  <str name="mode">
+                    <tt:skip/>
+                  </str>
+                  <str name="raw" tt:value-ref="REQUEST.BODY"/>
+                </object>
+              </tt:cond>
+              <object name="url">
+                <str name="raw" tt:value-ref="REQUEST.URL"/>
+              </object>
+
+            </object>
+          </object>
+        </tt:loop>
+
+      </array>
+    </object>
+  </tt:template>
+
+
+</tt:transform>
