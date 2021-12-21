@@ -63,7 +63,7 @@ CLASS lcl_dialogbox IMPLEMENTATION.
   ENDMETHOD.
 ENDCLASS.
 
-CLASS lcx_app DEFINITION INHERITING FROM cx_static_check.
+CLASS zcx_httped DEFINITION INHERITING FROM cx_static_check.
   PUBLIC SECTION.
     METHODS constructor
       IMPORTING
@@ -76,7 +76,7 @@ CLASS lcx_app DEFINITION INHERITING FROM cx_static_check.
     DATA: text TYPE string.
 ENDCLASS.
 
-CLASS lcx_app IMPLEMENTATION.
+CLASS zcx_httped IMPLEMENTATION.
 
   METHOD constructor.
     super->constructor(
@@ -209,9 +209,12 @@ CLASS lcl_app DEFINITION.
 
     METHODS at_selection_screen
       RAISING
-        lcx_app.
+        zcx_httped.
 
   PRIVATE SECTION.
+
+    TYPES:
+      ty_files TYPE STANDARD TABLE OF file_table WITH EMPTY KEY.
 
     METHODS load_file
       IMPORTING
@@ -219,21 +222,33 @@ CLASS lcl_app DEFINITION.
       RETURNING
         VALUE(result) TYPE xstring
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS write_bin_file
       IMPORTING
         i_filename     TYPE csequence
         i_file_xstring TYPE xstring
       RAISING
-        lcx_app.
+        zcx_httped.
+
+    METHODS file_open_dialog
+      RETURNING
+        VALUE(result) TYPE ty_files
+      RAISING
+        zcx_httped.
+
+    METHODS file_save_dialog
+      RETURNING
+        VALUE(result) TYPE string
+      RAISING
+        zcx_httped.
 
     DATA: ref_sscrfields TYPE REF TO sscrfields.
 
 ENDCLASS.
 
 
-CLASS lcl_http_tree DEFINITION.
+CLASS lzcl_httped_tree DEFINITION.
 
   PUBLIC SECTION.
 
@@ -242,13 +257,13 @@ CLASS lcl_http_tree DEFINITION.
         container          TYPE REF TO cl_gui_container
         postman_collection TYPE ty_postman
       RETURNING
-        VALUE(result)      TYPE REF TO lcl_http_tree
+        VALUE(result)      TYPE REF TO lzcl_httped_tree
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS show
       RAISING
-        lcx_app.
+        zcx_httped.
 
   PRIVATE SECTION.
 
@@ -262,7 +277,7 @@ CLASS lcl_http_tree DEFINITION.
       RETURNING
         VALUE(result)    TYPE REF TO lif_tree_node
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS get_new_node_key
       RETURNING
@@ -270,7 +285,7 @@ CLASS lcl_http_tree DEFINITION.
 
     METHODS create_request
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS node_get_user_object
       IMPORTING
@@ -278,14 +293,14 @@ CLASS lcl_http_tree DEFINITION.
       RETURNING
         VALUE(result) TYPE REF TO object
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS copy_request
       IMPORTING
         request TYPE REF TO lif_tree_node
         to      TYPE REF TO lif_tree_node
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS postman_item_to_request
       IMPORTING
@@ -293,7 +308,7 @@ CLASS lcl_http_tree DEFINITION.
       RETURNING
         VALUE(result) TYPE REF TO if_http_entity
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS add_node
       IMPORTING
@@ -304,29 +319,29 @@ CLASS lcl_http_tree DEFINITION.
         i_drag_drop_id     TYPE i OPTIONAL
         i_text             TYPE string
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS ensure_visible
       IMPORTING
         node_key TYPE string
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS update_view
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS set_focus
       IMPORTING
         container TYPE REF TO cl_gui_container
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS create_http_client
       RETURNING
         VALUE(result) TYPE REF TO if_http_client
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS clone_http_request
       IMPORTING
@@ -334,7 +349,7 @@ CLASS lcl_http_tree DEFINITION.
       RETURNING
         VALUE(result) TYPE REF TO if_http_request
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS get_entity_xstring
       IMPORTING
@@ -346,21 +361,29 @@ CLASS lcl_http_tree DEFINITION.
       IMPORTING
         node_key TYPE string
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS delete_request_or_part
       IMPORTING
         i_tree_node TYPE REF TO lif_tree_node
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS delete_node
       IMPORTING
-        tree_node TYPE REF TO lif_tree_node.
+        tree_node TYPE REF TO lif_tree_node
+      RAISING
+        zcx_httped.
+
+    METHODS set_registered_events
+      IMPORTING
+        events TYPE cntl_simple_events
+      RAISING
+        zcx_httped.
 
     CLASS-METHODS initialize_dnd
       RAISING
-        lcx_app.
+        zcx_httped.
 
     CLASS-METHODS create_dragdrop
       IMPORTING
@@ -371,7 +394,7 @@ CLASS lcl_http_tree DEFINITION.
       RETURNING
         VALUE(result) TYPE i
       RAISING
-        lcx_app.
+        zcx_httped.
 
     METHODS handle_node_context_menu_req
                   FOR EVENT node_context_menu_request OF cl_tree_model
@@ -380,6 +403,10 @@ CLASS lcl_http_tree DEFINITION.
     METHODS handle_node_context_menu_sel
                   FOR EVENT node_context_menu_select OF cl_tree_model
       IMPORTING node_key fcode.
+
+    METHODS on_node_double_click
+                  FOR EVENT node_double_click OF cl_tree_model
+      IMPORTING node_key.
 
     METHODS on_drag
                   FOR EVENT drag OF cl_column_tree_model
@@ -393,18 +420,9 @@ CLASS lcl_http_tree DEFINITION.
                   FOR EVENT drop_complete OF cl_column_tree_model
       IMPORTING node_key item_name drag_drop_object.
 
-    METHODS on_drop_get_flavor
-                  FOR EVENT drop_get_flavor OF cl_tree_model
-      IMPORTING node_key drag_drop_object flavors.
-
     DATA:
       postman_collection TYPE ty_postman,
       go_tree2           TYPE REF TO cl_column_tree_model,
-      l_node_key         TYPE string,
-      l_node_key_2       TYPE string,
-      lt_column          TYPE treemcitab,
-      ls_column          TYPE treemcitem,
-      ref_sscrfields     TYPE REF TO sscrfields,
       container          TYPE REF TO cl_gui_container,
       next_node_key      TYPE i VALUE 1,
       tree_root          TYPE REF TO lcl_tree_node.
@@ -416,9 +434,6 @@ CLASS lcl_http_tree DEFINITION.
           source_target TYPE i,
         END OF part_to_multipart,
       END OF dnd_id.
-*      dnd_part_to_multipart_src     TYPE REF TO cl_dragdrop,
-*      dnd_part_to_multipart_tgt     TYPE REF TO cl_dragdrop,
-*      dnd_part_to_multipart_src_tgt TYPE REF TO cl_dragdrop.
 
 ENDCLASS.
 
@@ -453,92 +468,48 @@ CLASS lcl_app IMPLEMENTATION.
 
   METHOD at_selection_screen.
 
-    DATA: lt_filetable TYPE filetable,
-          l_rc         TYPE i,
-          l_action     TYPE i,
-          file_name    TYPE string,
-          file_path    TYPE string,
-          full_path    TYPE string,
-          tree         TYPE REF TO lcl_http_tree.
-    FIELD-SYMBOLS:
-      <ls_file> TYPE file_table.
+    DATA: tree TYPE REF TO lzcl_httped_tree.
 
     CASE ref_sscrfields->ucomm.
 
       WHEN 'FC01'.
-        " Open existing file
-        cl_gui_frontend_services=>file_open_dialog(
-          EXPORTING
-            window_title            = 'Open existing Postman file'
-            default_filename        = 'Fiori.postman_collection.json'
-            file_filter             = '.json'
-            initial_directory       = 'C:\Users\sandra.rossi\Accenture\LPP - Local - Documents\General\OData'
-            multiselection          = abap_true
-          CHANGING
-            file_table              = lt_filetable
-            rc                      = l_rc
-            user_action             = l_action
-          EXCEPTIONS
-            file_open_dialog_failed = 1
-            cntl_error              = 2
-            error_no_gui            = 3
-            not_supported_by_gui    = 4
-            OTHERS                  = 5 ).
-        IF sy-subrc <> 0.
-          RAISE EXCEPTION TYPE lcx_app EXPORTING text = 'save dialog'.
-        ENDIF.
-        IF l_action = cl_gui_frontend_services=>action_ok.
-          LOOP AT lt_filetable ASSIGNING <ls_file>.
-            DATA(result) = load_file( file_path = <ls_file>-filename ).
-            DATA(postman_collection) = VALUE ty_postman( ).
-            TRY.
-                CALL TRANSFORMATION zhttped_postman_collection SOURCE XML result RESULT root = postman_collection.
-              CATCH cx_root INTO DATA(lx).
-                RAISE EXCEPTION TYPE lcx_app EXPORTING text = 'transfo' previous = lx.
-            ENDTRY.
-            tree = lcl_http_tree=>create(
-                container          = lcl_dialogbox=>create( title = <ls_file>-filename )->get_container( )
-                postman_collection = postman_collection ).
-            tree->show( ).
-          ENDLOOP.
-        ENDIF.
 
-      WHEN 'FC02'.
-        " Create new file
-        cl_gui_frontend_services=>file_save_dialog(
-          EXPORTING
-            window_title            = 'Open existing Postman file'
-            default_file_name       = 'XXXXX.postman_collection.json'
-            file_filter             = '.json'
-            initial_directory       = 'C:\Users\sandra.rossi\Accenture\LPP - Local - Documents\General\OData'
-            prompt_on_overwrite     = abap_true
-          CHANGING
-            filename                  = file_name
-            path                      = file_path
-            fullpath                  = full_path
-            user_action               = l_action
-          EXCEPTIONS
-            cntl_error                = 1
-            error_no_gui              = 2
-            not_supported_by_gui      = 3
-            invalid_default_file_name = 4
-            OTHERS                    = 5 ).
-        IF sy-subrc <> 0.
-          RAISE EXCEPTION TYPE lcx_app EXPORTING text = 'save dialog'.
-        ENDIF.
-        IF l_action = cl_gui_frontend_services=>action_ok.
+        DATA(files) = file_open_dialog( ).
+
+        LOOP AT files ASSIGNING FIELD-SYMBOL(<file>).
+
+          DATA(result) = load_file( file_path = <file>-filename ).
+
+          DATA(postman_collection) = VALUE ty_postman( ).
           TRY.
-              CLEAR postman_collection.
-              CALL TRANSFORMATION zhttped_postman_collection SOURCE root = postman_collection RESULT XML DATA(xstring).
-            CATCH cx_root INTO lx.
-              RAISE EXCEPTION NEW lcx_app( text = 'transfo' previous = lx ).
+              CALL TRANSFORMATION zhttped_postman_collection SOURCE XML result RESULT root = postman_collection.
+            CATCH cx_root INTO DATA(lx).
+              RAISE EXCEPTION TYPE zcx_httped EXPORTING text = 'transfo' previous = lx.
           ENDTRY.
-          write_bin_file( i_filename = full_path i_file_xstring = xstring ).
-          tree = lcl_http_tree=>create(
-              container          = lcl_dialogbox=>create( title = full_path )->get_container( )
+
+          tree = lzcl_httped_tree=>create(
+              container          = lcl_dialogbox=>create( title = <file>-filename )->get_container( )
               postman_collection = postman_collection ).
           tree->show( ).
-        ENDIF.
+        ENDLOOP.
+
+      WHEN 'FC02'.
+
+        DATA(full_path) = file_save_dialog( ).
+
+        TRY.
+            CLEAR postman_collection.
+            CALL TRANSFORMATION zhttped_postman_collection SOURCE root = postman_collection RESULT XML DATA(xstring).
+          CATCH cx_root INTO lx.
+            RAISE EXCEPTION NEW zcx_httped( text = 'transfo' previous = lx ).
+        ENDTRY.
+
+        write_bin_file( i_filename = full_path i_file_xstring = xstring ).
+
+        tree = lzcl_httped_tree=>create(
+            container          = lcl_dialogbox=>create( title = full_path )->get_container( )
+            postman_collection = postman_collection ).
+        tree->show( ).
 
     ENDCASE.
 
@@ -564,7 +535,7 @@ CLASS lcl_app IMPLEMENTATION.
       EXCEPTIONS
         OTHERS     = 1 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'cl_gui_frontend_services=>gui_upload' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'cl_gui_frontend_services=>gui_upload' ).
     ENDIF.
 
     result = cl_bcs_convert=>solix_to_xstring(
@@ -591,7 +562,7 @@ CLASS lcl_app IMPLEMENTATION.
       EXCEPTIONS
         OTHERS   = 3.
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'cl_swf_utl_convert_xstring=>xstring_to_table' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'cl_swf_utl_convert_xstring=>xstring_to_table' ).
     ENDIF.
 
     l_length = xstrlen( i_file_xstring ).
@@ -606,21 +577,87 @@ CLASS lcl_app IMPLEMENTATION.
       EXCEPTIONS
         OTHERS       = 3.
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'cl_gui_frontend_services=>gui_download' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'cl_gui_frontend_services=>gui_download' ).
     ENDIF.
 
   ENDMETHOD.
 
 
+
+  METHOD file_open_dialog.
+
+    DATA l_rc TYPE i.
+    DATA l_action TYPE i.
+
+    cl_gui_frontend_services=>file_open_dialog(
+      EXPORTING
+        window_title            = 'Open existing Postman file'
+        default_filename        = 'Fiori.postman_collection.json'
+        file_filter             = '.json'
+        initial_directory       = 'C:\Users\sandra.rossi\Accenture\LPP - Local - Documents\General\OData'
+        multiselection          = abap_true
+      CHANGING
+        file_table              = result
+        rc                      = l_rc
+        user_action             = l_action
+      EXCEPTIONS
+        file_open_dialog_failed = 1
+        cntl_error              = 2
+        error_no_gui            = 3
+        not_supported_by_gui    = 4
+        OTHERS                  = 5 ).
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE zcx_httped EXPORTING text = 'save dialog'.
+    ENDIF.
+    IF l_action <> cl_gui_frontend_services=>action_ok.
+      RAISE EXCEPTION TYPE zcx_httped EXPORTING text = 'Dialog cancelled by the user'.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD file_save_dialog.
+
+    DATA l_action TYPE i.
+    DATA file_name TYPE string.
+    DATA file_path TYPE string.
+
+    cl_gui_frontend_services=>file_save_dialog(
+      EXPORTING
+        window_title            = 'Create new Postman file'
+        default_file_name       = 'XXXXX.postman_collection.json'
+        file_filter             = '.json'
+        initial_directory       = 'C:\Users\sandra.rossi\Accenture\LPP - Local - Documents\General\OData'
+        prompt_on_overwrite     = abap_true
+      CHANGING
+        filename                  = file_name
+        path                      = file_path
+        fullpath                  = result
+        user_action               = l_action
+      EXCEPTIONS
+        cntl_error                = 1
+        error_no_gui              = 2
+        not_supported_by_gui      = 3
+        invalid_default_file_name = 4
+        OTHERS                    = 5 ).
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE zcx_httped EXPORTING text = 'save dialog'.
+    ENDIF.
+    IF l_action <> cl_gui_frontend_services=>action_ok.
+      RAISE EXCEPTION TYPE zcx_httped EXPORTING text = 'Dialog cancelled by the user'.
+    ENDIF.
+
+  ENDMETHOD.
+
 ENDCLASS.
 
 
-CLASS lcl_http_tree IMPLEMENTATION.
+CLASS lzcl_httped_tree IMPLEMENTATION.
 
 
   METHOD create.
 
-    result = NEW lcl_http_tree( ).
+    result = NEW lzcl_httped_tree( ).
     result->container = container.
     result->postman_collection = postman_collection.
 
@@ -633,8 +670,9 @@ CLASS lcl_http_tree IMPLEMENTATION.
     DATA: tree_request_or_part TYPE REF TO lif_tree_node.
 
     IF request IS INSTANCE OF if_http_request.
-      DATA(method) = CAST if_http_request( request )->get_method( ).
-      DATA(url) = request->get_header_field( name = if_http_header_fields_sap=>path ).
+      DATA(request2) = CAST if_http_request( request ).
+      DATA(method) = request2->get_method( ).
+      DATA(url) = request2->get_header_field( name = if_http_header_fields_sap=>path ).
     ENDIF.
 
     IF multipart IS NOT BOUND.
@@ -677,7 +715,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
                 i_text             = |body| ).
 
       IF request->get_content_type( ) = |application/http|.
-        DATA(embedded_request) = NEW cl_http_request( ).
+        DATA(embedded_request) = NEW zcl_httped_request( ).
         embedded_request->from_xstring( request->get_data( ) ).
         add_request( request = embedded_request description = 'HTTP' parent = tree_body ).
       ELSEIF request->num_multiparts( ) > 0.
@@ -762,7 +800,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
   METHOD create_request.
 
     DATA(client) = create_http_client( ).
-    DATA(request) = CAST cl_http_request( client->request ).
+    DATA(request) = CAST zcl_httped_request( client->request ).
 
     DATA(tree_request) = add_request( request = request description = 'request' parent = tree_root ).
 
@@ -777,7 +815,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
 
     go_tree2->node_get_user_object( EXPORTING node_key = node_key IMPORTING user_object = result EXCEPTIONS node_not_found = 1 OTHERS = 2 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'tree->node_get_user_object' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->node_get_user_object' ).
     ENDIF.
 
   ENDMETHOD.
@@ -803,7 +841,6 @@ CLASS lcl_http_tree IMPLEMENTATION.
           WHEN 'http_part_to_request'.
 
             copy_request( request = CAST #( drag_drop_object->object ) to = CAST #( node_get_user_object( node_key ) ) ).
-
             update_view( ).
 
         ENDCASE.
@@ -821,23 +858,13 @@ CLASS lcl_http_tree IMPLEMENTATION.
     TRY.
 
         IF drag_drop_object->effect = cl_dragdrop=>move.
-
           delete_node( CAST #( drag_drop_object->object ) ).
-
           update_view( ).
-
         ENDIF.
 
       CATCH cx_root INTO DATA(lx).
         MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
     ENDTRY.
-
-  ENDMETHOD.
-
-
-  METHOD on_drop_get_flavor.
-
-*    flavors = VALUE #( ( 'request_to_body' ) ).
 
   ENDMETHOD.
 
@@ -855,8 +882,6 @@ CLASS lcl_http_tree IMPLEMENTATION.
       WHEN TYPE lcl_tree_request.
         new_request = clone_http_request( request->request ).
         tree_request = add_request( request = new_request description = 'new request' previous_sibling = to ).
-      WHEN TYPE lcl_tree_method.
-      WHEN TYPE lcl_tree_header.
       WHEN TYPE lcl_tree_body.
         entity = to->request->add_multipart( ).
         header_fields = VALUE tihttpnvp( ).
@@ -877,6 +902,10 @@ CLASS lcl_http_tree IMPLEMENTATION.
                                     description      = 'new request'
                                     previous_sibling = to
                                     multipart        = to->request ).
+      WHEN OTHERS.
+        RAISE EXCEPTION NEW zcx_httped( text = 'programming error: target node not supported for copy/move' ).
+*      WHEN TYPE lcl_tree_method.
+*      WHEN TYPE lcl_tree_header.
     ENDCASE.
 
     expand_node( tree_request->node_key ).
@@ -893,7 +922,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
     DATA(client) = create_http_client( ).
     result  = CAST #( client->request ).
     CASE TYPE OF entity.
-      WHEN TYPE cl_http_request.
+      WHEN TYPE zcl_httped_request.
         xstring = entity->to_xstring( ).
       WHEN OTHERS.
         xstring = get_entity_xstring( entity ).
@@ -908,7 +937,6 @@ CLASS lcl_http_tree IMPLEMENTATION.
   METHOD show.
 
     DATA: ls_hierarchy_header TYPE treemhhdr,
-          multipart           TYPE REF TO if_http_entity,
           previous_sibling    TYPE REF TO lif_tree_node.
 
     me->container = container.
@@ -947,30 +975,17 @@ CLASS lcl_http_tree IMPLEMENTATION.
     ENDLOOP.
 
     expand_node( tree_root->lif_tree_node~node_key ).
-*    go_tree2->expand_root_nodes(
-*      EXPORTING
-*        expand_subtree      = abap_true
-*      EXCEPTIONS
-*        illegal_level_count = 1
-*        OTHERS              = 2 ).
-*    IF sy-subrc <> 0.
-*      RAISE EXCEPTION NEW lcx_app( text = 'tree->expand_root_nodes' ).
-*    ENDIF.
 
-    go_tree2->set_registered_events(
-      EXPORTING
-        events = VALUE #(
-                  ( eventid = cl_item_tree_model=>eventid_node_context_menu_req ) )
-      EXCEPTIONS
-        illegal_event_combination = 3
-        unknown_event = 4 ).
+    set_registered_events( VALUE #(
+          ( eventid = cl_item_tree_model=>eventid_node_context_menu_req )
+          ( eventid = cl_item_tree_model=>eventid_node_double_click ) ) ).
 
     SET HANDLER handle_node_context_menu_req FOR go_tree2.
     SET HANDLER handle_node_context_menu_sel FOR go_tree2.
     SET HANDLER on_drag FOR go_tree2.
     SET HANDLER on_drop FOR go_tree2.
     SET HANDLER on_drop_complete FOR go_tree2.
-    SET HANDLER on_drop_get_flavor FOR go_tree2.
+    SET HANDLER on_node_double_click FOR go_tree2.
 
     ensure_visible( tree_root->lif_tree_node~node_key ).
 
@@ -981,7 +996,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
 
   METHOD postman_item_to_request.
 
-    DATA client TYPE REF TO if_http_client.
+    DATA: client TYPE REF TO if_http_client.
 
 
     client = create_http_client( ).
@@ -1032,64 +1047,6 @@ CLASS lcl_http_tree IMPLEMENTATION.
             droptarget      = abap_true
             effect          = cl_dragdrop=>move + cl_dragdrop=>copy ).
 
-*    dnd_part_to_multipart_src->get_handle(
-*      IMPORTING
-*        handle      = dnd_id-part_to_multipart-source
-*      EXCEPTIONS
-*        obj_invalid = 1
-*        OTHERS      = 2 ).
-*    IF sy-subrc <> 0.
-*      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> get_handle' ).
-*    ENDIF.
-*
-*    dnd_part_to_multipart_tgt = NEW cl_dragdrop( ).
-*    dnd_part_to_multipart_tgt->add(
-*      EXPORTING
-*        flavor          = 'http_part_to_request'
-*        dragsrc         = abap_false
-*        droptarget      = abap_true
-*        effect          = cl_dragdrop=>move + cl_dragdrop=>copy
-*      EXCEPTIONS
-*        already_defined = 1
-*        obj_invalid     = 2
-*        OTHERS          = 3 ).
-*    IF sy-subrc <> 0.
-*      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> add' ).
-*    ENDIF.
-*    dnd_part_to_multipart_tgt->get_handle(
-*      IMPORTING
-*        handle      = dnd_id-part_to_multipart-target
-*      EXCEPTIONS
-*        obj_invalid = 1
-*        OTHERS      = 2 ).
-*    IF sy-subrc <> 0.
-*      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> get_handle' ).
-*    ENDIF.
-*
-*    dnd_part_to_multipart_src_tgt = NEW cl_dragdrop( ).
-*    dnd_part_to_multipart_src_tgt->add(
-*      EXPORTING
-*        flavor          = 'http_part_to_request'
-*        dragsrc         = abap_true
-*        droptarget      = abap_true
-*        effect          = cl_dragdrop=>move + cl_dragdrop=>copy
-*      EXCEPTIONS
-*        already_defined = 1
-*        obj_invalid     = 2
-*        OTHERS          = 3 ).
-*    IF sy-subrc <> 0.
-*      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> add' ).
-*    ENDIF.
-*    dnd_part_to_multipart_src_tgt->get_handle(
-*      IMPORTING
-*        handle      = dnd_id-part_to_multipart-source_target
-*      EXCEPTIONS
-*        obj_invalid = 1
-*        OTHERS      = 2 ).
-*    IF sy-subrc <> 0.
-*      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> get_handle' ).
-*    ENDIF.
-
   ENDMETHOD.
 
 
@@ -1119,7 +1076,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
         error_in_item_table     = 5
         OTHERS                  = 6 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'tree->add_node' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->add_node' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1136,10 +1093,9 @@ CLASS lcl_http_tree IMPLEMENTATION.
         cntl_system_error    = 3
         failed               = 4
         node_not_found       = 5
-        OTHERS               = 6
-    ).
+        OTHERS               = 6 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'tree->ensure_visible' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->ensure_visible' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1153,10 +1109,9 @@ CLASS lcl_http_tree IMPLEMENTATION.
         control_dead         = 2
         cntl_system_error    = 3
         failed               = 4
-        OTHERS               = 5
-    ).
+        OTHERS               = 5 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'tree->update_view' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->update_view' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1172,7 +1127,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
         cntl_system_error = 2
         OTHERS            = 3 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'cl_gui_control=>set_focus' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'cl_gui_control=>set_focus' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1180,16 +1135,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
 
   METHOD create_http_client.
 
-    cl_http_client=>create_internal(
-      IMPORTING
-        client            =      result
-      EXCEPTIONS
-        plugin_not_active = 1
-        internal_error    = 2
-        OTHERS            = 3 ).
-    IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'cl_http_client=>create_internal' ).
-    ENDIF.
+    result = zcl_httped_client=>create_internal( ).
 
   ENDMETHOD.
 
@@ -1197,8 +1143,6 @@ CLASS lcl_http_tree IMPLEMENTATION.
   METHOD create_dragdrop.
 
     DATA(dragdrop) = NEW cl_dragdrop( ).
-*    dnd_part_to_multipart_src = NEW cl_dragdrop( ).
-*    dnd_part_to_multipart_src->add(
     dragdrop->add(
       EXPORTING
         flavor          = flavor
@@ -1210,9 +1154,9 @@ CLASS lcl_http_tree IMPLEMENTATION.
         obj_invalid     = 2
         OTHERS          = 3 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> add' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'drag drop ID -> add' ).
     ENDIF.
-*    dnd_part_to_multipart_src->get_handle(
+
     dragdrop->get_handle(
       IMPORTING
         handle      = result
@@ -1220,7 +1164,7 @@ CLASS lcl_http_tree IMPLEMENTATION.
         obj_invalid = 1
         OTHERS      = 2 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'drag drop ID -> get_handle' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'drag drop ID -> get_handle' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1250,14 +1194,12 @@ CLASS lcl_http_tree IMPLEMENTATION.
     go_tree2->expand_node(
       EXPORTING
         node_key            = node_key
-*        expand_predecessors =     " 'X': Expand Predecessor of Node
         expand_subtree      = abap_true
-*        level_count         =     " Number of Lower Levels to be Expanded
       EXCEPTIONS
         node_not_found      = 1
         OTHERS              = 2 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'tree->expand_node' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->expand_node' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1280,7 +1222,48 @@ CLASS lcl_http_tree IMPLEMENTATION.
         node_not_found = 1
         OTHERS         = 2 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW lcx_app( text = 'tree->delete_node' ).
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->delete_node' ).
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD on_node_double_click.
+
+    TRY.
+
+        DATA(tree_node) = CAST lif_tree_node( node_get_user_object( node_key ) ).
+        DATA(dialogbox) = lcl_dialogbox=>create( title = 'HTTP contents' ).
+        DATA(go_textedit) = NEW cl_gui_textedit( parent = dialogbox->get_container( ) ).
+        go_textedit->set_textstream(
+          EXPORTING
+            text = cl_abap_codepage=>convert_from( tree_node->request->to_xstring( ) )
+          EXCEPTIONS
+            error_cntl_call_method = 1
+            not_supported_by_gui   = 2
+            OTHERS                 = 3 ).
+        IF sy-subrc <> 0.
+          RAISE EXCEPTION NEW zcx_httped( text = 'textedit->set_textstream' ).
+        ENDIF.
+
+      CATCH cx_root INTO DATA(lx).
+        MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+
+  METHOD set_registered_events.
+
+    go_tree2->set_registered_events(
+      EXPORTING
+        events                    = events
+      EXCEPTIONS
+        illegal_event_combination = 1
+        unknown_event             = 2 ).
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION NEW zcx_httped( text = 'tree->set_registered_events' ).
     ENDIF.
 
   ENDMETHOD.
@@ -1300,13 +1283,13 @@ LOAD-OF-PROGRAM.
 AT SELECTION-SCREEN OUTPUT.
   TRY.
       go_app->at_selection_screen_output( ).
-    CATCH lcx_app INTO DATA(lx).
+    CATCH zcx_httped INTO DATA(lx).
       MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
   ENDTRY.
 
 AT SELECTION-SCREEN.
   TRY.
       go_app->at_selection_screen( ).
-    CATCH lcx_app INTO DATA(lx).
+    CATCH zcx_httped INTO DATA(lx).
       MESSAGE lx TYPE 'E'.
   ENDTRY.
